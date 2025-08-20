@@ -1,39 +1,55 @@
 
-def getBaseAddr(DEC_BASE_ADDR):
-    BASE_ADDR = 0
-    for val in DEC_BASE_ADDR.split("."):
-        BASE_ADDR <<= 8
-        BASE_ADDR |= int(val)
-    return BASE_ADDR
+GIVEN_ADDR = 0
+NET_PREFIX_LEN = 0
+HOST_SUFFIX_LEN = 0
+NET_MASK = 0
+NET_ADDR = 0
 
-def getBaseAddrMask(DEC_BASE_CIDR_VAL):
-    BASE_MASK = 0
-    for i in range(int(DEC_BASE_CIDR_VAL)):
-        BASE_MASK <<= 1
-        BASE_MASK |= 1
-    BASE_MASK <<= 32 - int(DEC_BASE_CIDR_VAL)
-    return BASE_MASK
+def strtoiIPV4(ipv4_str):
+    ipv4_int = 0
+    for val in ipv4_str.split("."):
+        ipv4_int <<= 8
+        ipv4_int |= int(val)
+    return ipv4_int
+
+def prefixLenToNetMask(prefix_len):
+    net_mask = 0
+    for i in range(int(prefix_len)):
+        net_mask <<= 1
+        net_mask |= 1
+    net_mask <<= 32 - int(prefix_len)
+    return net_mask
 
 def getSortedSubnetHosts(num_subnets):
     subnet_hosts = []
     for i in range(num_subnets):
         subnet_name = input(f"Enter the name of subnet {i}: ")
-        num_hosts = input(f"Enter the number of hosts you wish to have under the subnet \"{subnet_name}\": ")
+        num_hosts = int(input(f"Enter the number of hosts you wish to have under the subnet \"{subnet_name}\": "))
         subnet_hosts.append((subnet_name, num_hosts))
     subnet_hosts = sorted(subnet_hosts, key=lambda x: x[0])
     return sorted(subnet_hosts, key=lambda x: x[1], reverse=True)
 
 def main():
-    DEC_CIDR_BASE_ADDR = input("Enter your network's IPv4 base address in decimal and CIDR notation(v.w.x.y/z): ").split("/")
-    BASE_ADDR = getBaseAddr(DEC_CIDR_BASE_ADDR[0])
-    print(bin(BASE_ADDR))
-    BASE_MASK = getBaseAddrMask(DEC_CIDR_BASE_ADDR[1])
-    print(bin(BASE_MASK))
-    print(bin(BASE_ADDR & BASE_MASK))
+    cidr_ipv4_str = input("Enter your network's IPv4 base address in decimal and CIDR notation(v.w.x.y/z): ").split("/")
+    GIVEN_ADDR = strtoiIPV4(cidr_ipv4_str[0])
+    NET_PREFIX_LEN = int(cidr_ipv4_str[1])
+    HOST_SUFFIX_LEN = 32 - NET_PREFIX_LEN
+    NET_MASK = prefixLenToNetMask(NET_PREFIX_LEN)
+    NET_ADDR = GIVEN_ADDR & NET_MASK
+    print("Given Address Binary = " + bin(GIVEN_ADDR))
+    print("Network Prefix Length = " + str(NET_PREFIX_LEN))
+    print("Host Suffix Lenght = " + str(HOST_SUFFIX_LEN))
+    print("Network Mask = " + bin(NET_MASK))
+    print("Network Address = " + bin(NET_ADDR))
     
     num_subnets = int(input("Enter number of subnets you wish to add to your network: "))
     subnet_hosts = getSortedSubnetHosts(num_subnets)
-    print(subnet_hosts)
+    print("Subnet Hosts = " + str(subnet_hosts))
+
+    total_needed_hosts = sum(e[1] for e in subnet_hosts)
+    max_possible_hosts = pow(2, HOST_SUFFIX_LEN) - 2
+    if (total_needed_hosts > max_possible_hosts):
+        print("NOT ENOUGH HOSTS AVAILABLE TO ALLOCATE SUBNETS")
 
 if __name__ == "__main__":
     main()
